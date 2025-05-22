@@ -12,7 +12,7 @@ MYSHELL = build/shell.o
 all: shell
 
 shell: $(MYSHELL) $(AUXILIARY)
-	gcc $(CFLAGS) -o build/shell $(MYSHELL) $(AUXILIARY)
+	gcc $(CFLAGS) -o shell $(MYSHELL) $(AUXILIARY)
 
 parserTest: build/parserTest.o $(PARSER)
 	gcc $(CFLAGS) -o build/parserTest build/parserTest.o $(PARSER) $(UNITY)
