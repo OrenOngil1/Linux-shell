@@ -10,45 +10,59 @@
 //The longer the operator, the more at the beginnig it must be!
 const char *OPERATORS[] = {"<", ">", "&", "|", NULL}; 
 
-int isOperator(char *str)
+char *isOperator(char *str)
 {
     const char * const *operator_ptr = OPERATORS;
-    char *operator;
+    const char *operator;
     int n;
     while((operator = *operator_ptr))
     {
         n = strlen(operator);
         if(!strncmp(str, operator, n))
         {
-            return 1;
+            char* op = calloc(strlen(operator) + 1, sizeof(char));
+            strcpy(op, operator);
+            return op;
         }
         operator_ptr++;
     }
-    return 0;
+    return NULL;
+}
+
+int skipWhiteSpaces(char *str, int i, int j)
+{
+    while(i < j && str[i] != '\0' && str[i] == ' ') i++;
+    return i;
 }
 
 char *firstWord(char *line)
 {
-    int n = 0;
-    while(line[n] != '\0' && !isOperator(&line[n]))
+    int beginIndex = skipWhiteSpaces(line, 0, strlen(line));
+    int endIndex = beginIndex;
+    char *temp = NULL;
+    while(line[endIndex] != '\0' && line[endIndex] != ' ' && !(temp = isOperator(&line[endIndex])))
     {
-        n++;
+        endIndex++;
     }
-    if(!n) return NULL;
-    char *word = calloc(n + 1, sizeof(char));
-    strncpy(word, line, n);
-    word[n] = '\0';
+    if(endIndex == beginIndex)
+    {
+        return NULL;
+    }
+    free(temp);
+    char *word = calloc(endIndex - beginIndex + 1, sizeof(char));
+    strncpy(word, &line[beginIndex], endIndex - beginIndex);
     return word;
 }
+
 
 int parseNext(ParsedCmdLine *pLine, char *line)
 {
     pLine->next = parseCmdLine(line);
     if(!pLine->next) return -1;
-    return -2;
+    return 1;
 }
 
-void freeParsedCmdLine(ParsedCmdLine *pCmdLine)
+void freeCmdLine(ParsedCmdLine *pCmdLine)
 {
     if(!pCmdLine) return;
 
@@ -58,8 +72,28 @@ void freeParsedCmdLine(ParsedCmdLine *pCmdLine)
     }
     Free(pCmdLine->inputRedirect);
     Free(pCmdLine->outputRedirect);
-    freeParsedCmdLine(pCmdLine->next);
+    freeCmdLine(pCmdLine->next);
+    free(pCmdLine->str);
     free(pCmdLine);
+}
+
+char *unparseCmdLine(ParsedCmdLine *pCmdLine)
+{
+    int i = skipWhiteSpaces(pCmdLine->str, 0, strlen(pCmdLine->str));
+    return &pCmdLine->str[i];
+}
+
+int isInvalidInput(char *line)
+{
+    return !line || line[0] == '\0' || strlen(line) > ARG_MAX;
+}
+
+char *makeStr(char *line, int endIndex)
+{
+    int beginIndex = 0;
+    char *str = calloc(endIndex + 1 - beginIndex, sizeof(char));
+    strncpy(str, &line[beginIndex], endIndex - beginIndex);
+    return str;
 }
 
 int redirectInput(ParsedCmdLine *pLine, char *line)
@@ -71,7 +105,7 @@ int redirectInput(ParsedCmdLine *pLine, char *line)
     {
         return -1;
     }
-    return strlen(pLine->inputRedirect);
+    return 0;
 }
 
 int redirectOutput(ParsedCmdLine *pLine, char *line)
@@ -83,16 +117,16 @@ int redirectOutput(ParsedCmdLine *pLine, char *line)
     {
         return -1;
     }
-    return strlen(pLine->outputRedirect);
+    return 0;
 }
 
-int makeBlocking(ParsedCmdLine *pLine, char *line)
+int setNonBlocking(ParsedCmdLine *pLine, char *line)
 {
-    pLine->blocking = 1;
-    return 1;
+    pLine->blocking = 0;
+    return 0;
 }
 
-int checkForOperator(ParsedCmdLine *pLine, char *line)
+int applyOperator(ParsedCmdLine *pLine, char *line)
 {
     if(line[0] == '|')
     {
@@ -108,23 +142,23 @@ int checkForOperator(ParsedCmdLine *pLine, char *line)
     }
     else if(line[0] == '&')
     {
-        return makeBlocking(pLine, line + 1);
+        return setNonBlocking(pLine, line + 1);
     }
     return 0;
 }
 
 ParsedCmdLine *parseCmdLine(char *line)
 {
-    if(!line || line[0] == '\0' || strlen(line) > ARG_MAX)
+    if(isInvalidInput(line))
     {
         return NULL;
     }
 
-    ParsedCmdLine *pLine = malloc(sizeof(ParsedCmdLine));
+    ParsedCmdLine *pLine = calloc(1, sizeof(ParsedCmdLine));
     pLine->argCount = 0;
     pLine->inputRedirect = NULL;
     pLine->outputRedirect = NULL;
-    pLine->blocking = 0;
+    pLine->blocking = 1;
     pLine->next = NULL;
 
     int i = 0;
@@ -132,12 +166,26 @@ ParsedCmdLine *parseCmdLine(char *line)
     char *arg;
     while(pLine->argCount < MAX_ARGS && line[i] != '\0')
     {
-
-        while(line[i] == ' ') i++;
-
-        j = checkForOperator(pLine, &line[i]);
+        i = skipWhiteSpaces(line, i, strlen(line));
+        j = 0;
+        if((arg = isOperator(&line[i]))) 
+        {
+            if(strcmp(arg, "|"))
+            {
+                pLine->args[pLine->argCount++] = arg;
+            }
+            else {
+                free(arg);
+            }
+            j = applyOperator(pLine, &line[i]);
+            if(!j) 
+            {
+                i += strlen(arg);
+                continue;
+            }
+        }
         
-        if(j > 0)
+        if(j == 0)
         {
             arg = firstWord(&line[i]);
             if(arg) 
@@ -145,21 +193,26 @@ ParsedCmdLine *parseCmdLine(char *line)
                 pLine->args[pLine->argCount++] = arg;
                 i += strlen(arg);
             }
-            else i++;
+            else if(line[i] == '\0')
+            {
+                break;
+            }
+            else {
+                i++;
+            }
         }
         else if(j == -1)
         {
-            freeParsedCmdLine(pLine);
+            freeCmdLine(pLine);
             return NULL;
         }
-        else if(j == -2)
+        else if(j == 1)
         {
             break;
         }
     }
 
-    pLine->str = calloc(i + 1, sizeof(char));
-    strncpy(pLine->str, line, i);
+    pLine->str = makeStr(line, i);
     pLine->args[pLine->argCount] = NULL;
     return pLine;
 }
