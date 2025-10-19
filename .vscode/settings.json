@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "cstdlib": "c",
+        "stdlib.h": "c",
+        "cmath": "c",
+        "optional": "c",
+        "system_error": "c",
+        "array": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "ast.h": "c",
+        "unistd.h": "c",
+        "history.h": "c"
+    },
+    "makefile.makefilePath": "./",
+    "C_Cpp.errorSquiggles": "enabled"
+}
