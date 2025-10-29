@@ -1,10 +1,11 @@
 #include "shell.h"
 #include "scanner.h"
-#include "ast.h"
+#include "parser.h"
 #include "executor.h"
 #include "history.h"
 #include <linux/limits.h>
 #include <sys/wait.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
@@ -52,22 +53,8 @@ void print_cwd()
         exit(1);
     }
 
-    printf("%s$ ", cwd);
+    printf("%s> ", cwd);
     fflush(stdout);
-}
-
-void update_processes(Process **process_list, int pipe[2])
-{
-    Process_record pr;
-
-    while(read(pipe[0], &pr, sizeof(Process_record)) == sizeof(Process_record)) {
-        //printf("read process %d in shell\n", pr.pid);
-        if(!is_empty(&(pr.cmd))) {
-            //printf("added %d to process list in shell\n", pr.pid);
-            add_process(process_list, dup_exec(&(pr.cmd)), pr.pid);
-        }
-    }
-    //printf("done updating process list\n");
 }
 
 int main()
@@ -101,7 +88,7 @@ int main()
         cmd = parse(tokens);
         //printf("line parsed\n");
 
-        if(execute(cmd, &global_env) == 0) {
+        if(cmd && execute(cmd, &global_env) == 0) {
             archive(global_env.history, (void *)strdup(buffer));
         }
         //printf("line executed\n");

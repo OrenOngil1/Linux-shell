@@ -51,17 +51,6 @@ int execute_builtin(char **args, int num ,Env *env)
     return 1;
 }
 
-void add_process_record(pid_t pid, Cmd *exec_cmd, int pipe[2])
-{
-    Process_record new_pr = {pid, *exec_cmd};
-    printf("writing process %d, cmd: %s to pipe\n", pid, exec_cmd->exec.args[0] == NULL ? "<empty>" : exec_cmd->exec.args[0]);
-    if(write(pipe[1], &new_pr, sizeof(Process_record)) != sizeof(Process_record)) {
-        perror("write error in executor");
-        exit(1);
-    }
-    printf("writing of %d successeful\n", pid);
-}
-
 void close_pipe(int p[2], int close_write_end) {
     if(p[0] != -1 && close(p[0]) == -1) {
         perror("close error of read end");
@@ -103,11 +92,13 @@ int execute_executable(char **args, int num, int should_wait ,Env *env)
 
         } else if(should_wait) {
             waitpid(pid, &status, 0);
+            //printf("%s executed\n", args[0]);
             return get_exit_code(status);
         }
     }
-    add_process_record(pid, (temp = init_executble(args, num)), env->process_pipe);
-    //add_process(env->process_list, init_executble(args, num), pid);
+    //printf("%s executed\n", args[0]);
+    temp = init_executble(args, num);
+    add_process_record(pid, temp, env->process_pipe);
     free(temp);
     return 0;
 }

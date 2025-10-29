@@ -53,4 +53,7 @@ Push Log:
     Pipes are no longer limted to be of length 2!
     Removed now-unecessary .gitignore, git modoules.
     Parser tests are in parser_test.c
-    
+
+* Update #4:
+    Various bug fixes in parsing and execution.
+    Fixed bugs relating to subshell commands.

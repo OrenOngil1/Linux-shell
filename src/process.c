@@ -1,10 +1,11 @@
+#include "process.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
 #include <linux/limits.h>
-#include "process.h"
+#include <unistd.h>
 
 void add_process(Process** process_list, Cmd* cmd, pid_t pid)
 {
@@ -137,4 +138,27 @@ void update_process_status(Process* process_list, pid_t pid, int status)
         }
         curr = curr->next;
     }
+}
+
+void add_process_record(pid_t pid, Cmd *exec_cmd, int pipe[2])
+{
+    Process_record new_pr = {pid, *exec_cmd};
+    //printf("writing process %d, cmd: %s to pipe\n", pid, exec_cmd->exec.args[0] == NULL ? "<empty>" : exec_cmd->exec.args[0]);
+    if(write(pipe[1], &new_pr, sizeof(Process_record)) != sizeof(Process_record)) {
+        perror("write error in executor");
+        exit(1);
+    }
+    //printf("writing of %d successeful\n", pid);
+}
+
+void update_processes(Process **process_list, int pipe[2])
+{
+    Process_record pr;
+
+    while(read(pipe[0], &pr, sizeof(Process_record)) == sizeof(Process_record)) {
+        //printf("read process %d in shell\n", pr.pid);
+        add_process(process_list, dup_exec(&(pr.cmd)), pr.pid);
+        //printf("added %d to process list in shell\n", pr.pid);
+    }
+    //printf("done updating process list\n");
 }

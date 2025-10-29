@@ -2,24 +2,31 @@
 #define OPERATOR_H
 
 //Operator header, containing the operator tables,
-//its entries being pairs of the oprerator and its precedence in the hierarchy.
+//its entries being pairs of the oprerator and its binding powers as tuples in the hierarchy.
 
-//Type of Entry in operator tables.
-typedef struct entry {
-    char *key;
-    int value;
-} Entry;
+//Definition of an Operator.
+typedef struct operator {
+    char *str;
+    int l_bp;
+    int r_bp; 
+} Operator;
 
 //Operator table of operators that do not require a special format.
-extern const Entry simple_ops[];
+extern const Operator simple_ops[];
 
 //Returns a duplicate of the operator at the start of this line, or NULL if none found.
-char *get_op(char *line);
+char *dup_op(char *line);
 
 //Returns true if token is an operator, false otherwise.
 int is_op(char *token);
 
-//Returns the precedence of the operator in the hierarchy.
-int precedence(char *op);
+//Returns Operator view of the op.
+Operator get_op(char *op);
+
+//Retunrs 1 if op is a terminator token, 0 otherwise.
+int is_terminator(char *op);
+
+//Retunrs 1 if op is a close bracket token, 0 otherwise.
+int is_close_bracket(char *op);
 
 #endif

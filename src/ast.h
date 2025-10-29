@@ -1,13 +1,12 @@
 #ifndef AST_H
 #define AST_H
 
-#define print_cmd(cmd) print_cmd_internal(cmd, 0)
 //
 //Defenition of the context free grammer which defines the shell's syntax.
 //
 //<io-op> ::= < | >                                                                     ;; enum IO_Type
 //<exec> ::= args*                                                                      ;; Exec(char **args)
-//<non-blocking> ::= <cmd> (& <cmd>)+ | <cmd> (& <cmd>)* &                              ;; nonblocking(Cmd **cmds, int num)
+//<non-blocking> ::= <cmd> &                                                            ;; nonblocking(Cmd *cmd)
 //<sequential> ::= <cmd> (; <cmd>)+ | <cmd> (; <cmd>)* ;                                ;; sequential(Cmd **cmds, int num)
 //<io-redirect> ::= <cmd> <io-op> <file_name>                                           ;; IO_Redirect(Cmd *cmd, io_op *op, file_name) 
 //<subshell> ::= (<cmd>)                                                                ;; subshell(Cmd *cmd)
@@ -85,12 +84,11 @@ typedef struct cmd {
 
 } Cmd;
 
-
-
-//Main parsing function
-Cmd *parse(char **tokens);
-
 //Utility functions for initiating Cmd nodes in the AST.
+
+
+//Retunrs a pointer to a Cmd based on operator op and operands lhs, rhs. Retunrs NULL in case of error.
+Cmd *make_cmd(char *op, Cmd *lhs, Cmd *rhs);
 
 //Initializes an unary Cmd.
 Cmd *init_unary(char *op, Cmd *operand);
@@ -107,8 +105,11 @@ int is_binary(char *op);
 //Returns 1 if op is an I/O redirection operation or 0 otherwise.
 int is_io(char *op);
 
-//Returns 1 if the exec type exec_cmd holds no arguments or 0 otherwise.
-int is_empty(Cmd *exec_cmd);
+//Returns 1 if op is a prefixed operation or 0 otherwise.
+int is_prefix(char *op);
+
+//Returns 1 if the cmd is of type CMD_EXEC and holds no arguments or 0 otherwise.
+int is_empty_exec(Cmd *cmd);
 
 //Retunrs the IO_type of io_op.
 IO_Type get_io_type(char *io_op);
@@ -155,8 +156,8 @@ void free_io_redirect_cmd(Cmd *cmd);
 //Frees the memory allocated to cmd.
 void free_cmd(Cmd *cmd);
 
-//Internal printing function, for user: use the print_cmd macro.
-void print_cmd_internal(Cmd *cmd, int level);
+//Prints the command cmd to stdout.
+void print_cmd(Cmd *cmd);
 
 //Duplicates executable_cmd, assumes it's of type CMD_EXEC.
 Cmd *dup_exec(Cmd *executable_cmd);

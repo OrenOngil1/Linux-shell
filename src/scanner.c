@@ -1,6 +1,7 @@
 #include "scanner.h"
 #include "operator.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define MAX_TOKENS 400
@@ -12,7 +13,7 @@ int first_word(char *line, char **tokens, int *n)
     char *word = NULL;
     char *op = NULL;
 
-    for( ; line[i] != '\0' && line[i] != ' ' && (op = get_op(&line[i])) == NULL; i++);
+    for( ; line[i] != '\0' && line[i] != ' ' && (op = dup_op(&line[i])) == NULL; i++);
 
     if(i > 0) {
         word = strndup(line, i);

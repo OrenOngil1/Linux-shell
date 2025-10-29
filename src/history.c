@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include "history.h"
 #include "scanner.h"
-#include "ast.h"
+#include "parser.h"
 
 void archive(Queue *history, char *line) {
     if(history->size == HISTLEN) {

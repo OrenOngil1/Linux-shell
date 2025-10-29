@@ -12,12 +12,6 @@ typedef struct env {
     int process_pipe[2];
 } Env;
 
-//Temporarily holds info on commands before their documentation in process_list.
-typedef struct p_record {
-    pid_t pid;
-    Cmd cmd;
-} Process_record;
-
 //Executes the commands of the AST rooted in cmd with the environment Env.
 int execute(Cmd *cmd, Env *env);
 
