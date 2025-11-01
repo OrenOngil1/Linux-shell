@@ -58,6 +58,7 @@ Cmd *_parse_round_brackets(char **tokens, int *index)
     }
 
     if(!tokens[i] || strcmp(tokens[i], ")") != 0) {
+        free_cmd(group);
         *index = i;
         return NULL;
     }
@@ -95,11 +96,14 @@ Cmd *_parse(char **tokens, int min_bp, int *index)
     int i = *index;
     Cmd *lhs = NULL, *rhs = NULL;
 
-    if(!tokens[i]) return init_empty();
+    if(!tokens[i]) return NULL;
 
     lhs = _parse_lhs(tokens, &i);
     if(!lhs) {
-        fprintf(stderr, "Unexpected token: %s\n", tokens[i]);
+        // printf("lhs: \n");
+        // print_cmd(lhs);
+        // fprintf(stderr, "Unexpected token: %s\n", tokens[i]);
+        // free_cmd(lhs);
         *index = i;
         return NULL;
     }
@@ -113,11 +117,12 @@ Cmd *_parse(char **tokens, int min_bp, int *index)
 
         i++;
         rhs = _parse(tokens, op.r_bp, &i);
-        if (!rhs && !is_terminator(op.str)) { 
+        if (!rhs && !is_terminator(op.str)) {
+            free_cmd(lhs);
             *index = i;
             return NULL; 
         }
-
+        
         lhs = make_cmd(op.str, lhs, rhs);
         if (!lhs) { 
             *index = i;

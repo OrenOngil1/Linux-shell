@@ -108,9 +108,6 @@ int is_io(char *op);
 //Returns 1 if op is a prefixed operation or 0 otherwise.
 int is_prefix(char *op);
 
-//Returns 1 if the cmd is of type CMD_EXEC and holds no arguments or 0 otherwise.
-int is_empty_exec(Cmd *cmd);
-
 //Retunrs the IO_type of io_op.
 IO_Type get_io_type(char *io_op);
 
@@ -137,9 +134,6 @@ Cmd *init_or(Cmd **cmds, int num);
 
 //Initializes an I/O redirection Cmd.
 Cmd *init_io_redirect(Cmd *cmd, IO_Type io_type , char *file_name);
-
-//Initializes an empty executable Cmd.
-Cmd *init_empty();
 
 //Frees the memory allocated to cmd and its args array.
 void free_exectble_cmd(Cmd *cmd);

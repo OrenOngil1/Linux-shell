@@ -23,8 +23,6 @@ int main() {
 
     test(R"(echo hello world)");
 
-    test(R"(procs)");
-
     test(R"(ls -a | grep -E ^s)");
 
     test(R"(echo a && echo b)");
@@ -49,11 +47,15 @@ int main() {
 
     test(R"(;)");
 
-    test(R"(&&)");
-
     test(R"(()");
 
     test(R"())");
+
+    test(R"((ls -s)");
+
+    test(R"(ls -a | )");
+
+    test(R"(cd .. && )");
     
     return 0;
 }

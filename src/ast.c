@@ -6,6 +6,11 @@
 
 void _print_cmd(Cmd *cmd, int level);
 
+int is_exec_fname(Cmd *cmd)
+{
+    return cmd && cmd->type == CMD_EXEC && cmd->exec.num == 1;
+}
+
 void print_str_arr(char **arr)
 {
     printf("[");
@@ -54,7 +59,6 @@ Cmd *extend_binary_cmd(Cmd *cmd1, Cmd *cmd2) {
 Cmd *make_cmd(char *op, Cmd *lhs, Cmd *rhs)
 {
     int is_unary_ans, is_binary_ans, is_io_ans , is_terminator_ans;
-    char *filename;
     Cmd *cmd;
 
     is_unary_ans = is_unary(op);
@@ -62,34 +66,43 @@ Cmd *make_cmd(char *op, Cmd *lhs, Cmd *rhs)
     is_io_ans = is_io(op);
     is_terminator_ans = is_terminator(op);
 
-    if(is_unary_ans && lhs) {
+    if(is_unary_ans && lhs && !rhs) {
         cmd = init_unary(op, lhs);
+        free_cmd(rhs);
 
-    } else if(is_unary_ans && !lhs && !rhs) {
+    } else if(is_unary_ans && lhs && rhs) {
         fprintf(stderr, "Syntax error: unary operator %s must have one operand\n", op);
+        free_cmd(lhs);
+        free_cmd(rhs);
         return NULL;
 
     } else if(is_binary_ans && lhs && rhs) {
         cmd = init_binary(op, lhs, rhs);
 
     } else if(is_binary_ans && lhs && !rhs && is_terminator_ans) {
-        cmd = init_binary(op, lhs, init_empty());
+        cmd = init_binary(op, lhs, rhs);
 
     } else if(is_binary_ans && !rhs && !is_terminator_ans) {
         fprintf(stderr, "Syntax error: binary operator %s must have two operands\n", op);
+        free_cmd(lhs);
+        free_cmd(rhs);
         return NULL;
 
-    } else if(is_io_ans && lhs && rhs && rhs->type == CMD_EXEC && rhs->exec.num == 1) {
-        filename = strdup(rhs->exec.args[0]);
-        cmd = init_io_redirect(lhs, get_io_type(op), filename);
-        free_cmd(rhs);
+    } else if(is_io_ans && lhs && is_exec_fname(rhs)) {
+        cmd = init_io_redirect(lhs, get_io_type(op), rhs->exec.args[0]);
+        free(rhs->exec.args);
+        free(rhs);
 
     } else if(is_io_ans) {
         fprintf(stderr, "Syntax error: I/O redirection operator %s requiers source and target\n", op);
+        free_cmd(lhs);
+        free_cmd(rhs);
         return NULL;
 
     } else {
         fprintf(stderr, "Syntax error: unhandled operator %s\n", op);
+        free_cmd(lhs);
+        free_cmd(rhs);
         return NULL;
     }
 
@@ -112,8 +125,7 @@ Cmd *init_binary(char *op, Cmd *operand1, Cmd *operand2)
     int num;
     Cmd **cmd_arr;
 
-    if(is_empty_exec(operand2)) {
-        free_cmd(operand2);
+    if(!operand2) {
         num = 1;
     } else {
         num = 2;
@@ -418,7 +430,7 @@ void print_io_redirect(Cmd *cmd, int level)
 
 void _print_cmd(Cmd *cmd, int level)
 {
-    if(!cmd) { printf("NULL\n"); return; }
+    if(!cmd) { printf("(null)\n"); return; }
 
     switch(cmd->type) {
 

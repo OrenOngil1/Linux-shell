@@ -143,12 +143,11 @@ void update_process_status(Process* process_list, pid_t pid, int status)
 void add_process_record(pid_t pid, Cmd *exec_cmd, int pipe[2])
 {
     Process_record new_pr = {pid, *exec_cmd};
-    //printf("writing process %d, cmd: %s to pipe\n", pid, exec_cmd->exec.args[0] == NULL ? "<empty>" : exec_cmd->exec.args[0]);
+
     if(write(pipe[1], &new_pr, sizeof(Process_record)) != sizeof(Process_record)) {
         perror("write error in executor");
         exit(1);
     }
-    //printf("writing of %d successeful\n", pid);
 }
 
 void update_processes(Process **process_list, int pipe[2])
